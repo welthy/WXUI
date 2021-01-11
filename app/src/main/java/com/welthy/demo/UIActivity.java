@@ -6,7 +6,7 @@ import android.widget.Button;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.welthy.demo.views.BeiSaierView;
+import com.welthy.demo.views.WaterWaveView;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -14,7 +14,7 @@ import butterknife.ButterKnife;
 public class UIActivity extends AppCompatActivity {
 
     @BindView(R.id.bei_saier)
-    BeiSaierView mBeiSaier;
+    WaterWaveView mBeiSaier;
 
     @BindView(R.id.btn_startAnim)
     Button btnStartAnim;

@@ -1,3 +1,7 @@
+/**
+ * WaterWaveView, use BeiSaier path to draw a water wave effect
+ */
+
 package com.welthy.demo.views;
 
 import android.animation.ValueAnimator;
@@ -6,18 +10,15 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.RectF;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
-import android.view.animation.AccelerateDecelerateInterpolator;
-import android.view.animation.LinearInterpolator;
 
 import androidx.annotation.Nullable;
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 
-public class BeiSaierView extends View {
+public class WaterWaveView extends View {
 
-    private final String TAG = BeiSaierView.class.getSimpleName();
+    private final String TAG = WaterWaveView.class.getSimpleName();
     private final int INIT_WIDTH = 200;
     private final int INIT_HEIGHT = 200;
 
@@ -27,18 +28,19 @@ public class BeiSaierView extends View {
 
     private int mItemWidth,mItemHeight;
     private int mOffset;
+    private volatile boolean mInit = false;
 
     private ValueAnimator translateAnim;
 
-    public BeiSaierView(Context context) {
+    public WaterWaveView(Context context) {
         this(context,null);
     }
 
-    public BeiSaierView(Context context, @Nullable AttributeSet attrs) {
+    public WaterWaveView(Context context, @Nullable AttributeSet attrs) {
         this(context, attrs,-1);
     }
 
-    public BeiSaierView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public WaterWaveView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init(context);
     }
@@ -55,8 +57,9 @@ public class BeiSaierView extends View {
         mBackPaint.setStyle(Paint.Style.FILL_AND_STROKE);
         mBackPaint.setStrokeWidth(5);
         mBackPaint.setColor(Color.BLUE);
-
+        //前景水波
         mBeiSaierPath = new Path();
+        //背景水波
         mBeiSaierBackPath = new Path();
 
         mItemWidth = getResources().getDisplayMetrics().widthPixels;
@@ -98,30 +101,35 @@ public class BeiSaierView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
+        //Path路线画之前要重置，否则会包含之前的信息。因为Path是对象成员变量
         mBeiSaierPath.reset();
-        Log.d(TAG,"onDraw() mOffset: "+mOffset + "   mItemWidth: "+mItemWidth);
+        //移动到初始点。需要距离View的左边界多出一个波长的距离，为了使View在移动结束到下次移动开始时连贯。
         mBeiSaierPath.moveTo(mOffset - mItemWidth,mItemHeight);
+        //画1个周期的水波
         for (int i = -mItemWidth; i<= mItemWidth + getWidth(); i += mItemWidth) {
             mBeiSaierPath.rQuadTo(mItemWidth/4 ,mItemHeight,mItemWidth/2,0);
             mBeiSaierPath.rQuadTo(mItemWidth/4,-mItemHeight, mItemWidth/2, 0);
         }
+        //连接View底部区域，最后封口，形成水槽
         mBeiSaierPath.lineTo(getWidth(),getHeight());
         mBeiSaierPath.lineTo(0,getHeight());
         mBeiSaierPath.close();
 
         canvas.drawPath(mBeiSaierPath,mPaint);
 
+        //画背景波纹
         mBeiSaierBackPath.reset();
-        mBeiSaierBackPath.moveTo(mOffset - mItemWidth + 100, mItemHeight);
+        //为了不和前景波纹重合，需要向右平移一段距离
+        mBeiSaierBackPath.moveTo(mOffset - 2 * mItemWidth + mItemWidth/4, mItemHeight);
         for (int i = -mItemWidth; i<= mItemWidth + getWidth(); i += mItemWidth) {
-            mBeiSaierBackPath.rQuadTo(mItemWidth/4 ,mItemHeight,mItemWidth/2,0);
-            mBeiSaierBackPath.rQuadTo(mItemWidth/4,-mItemHeight, mItemWidth/2, 0);
+            mBeiSaierBackPath.rQuadTo(mItemWidth/4, mItemHeight,mItemWidth/2,0);
+            mBeiSaierBackPath.rQuadTo(mItemWidth/4, -mItemHeight, mItemWidth/2, 0);
         }
         mBeiSaierBackPath.lineTo(getWidth(),getHeight());
         mBeiSaierBackPath.lineTo(0,getHeight());
         mBeiSaierBackPath.close();
         canvas.drawPath(mBeiSaierBackPath,mBackPaint);
-
+        mInit = true;
     }
 
     public void startAnim() {
@@ -129,7 +137,7 @@ public class BeiSaierView extends View {
             translateAnim = ValueAnimator.ofInt(0,mItemWidth);
             translateAnim.setDuration(3000);
             translateAnim.setRepeatCount(-1);
-            translateAnim.setInterpolator(new LinearInterpolator());
+            translateAnim.setInterpolator(new FastOutSlowInInterpolator());
             translateAnim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                 @Override
                 public void onAnimationUpdate(ValueAnimator animation) {
